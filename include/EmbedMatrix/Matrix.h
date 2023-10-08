@@ -45,6 +45,17 @@ class Matrix
         }
 
         /**
+         * @brief データのセット
+         * 
+         * @param data 
+         */
+        void set(DataType* data)
+        {
+            memcpy(_data, data, _data_size);
+        }
+
+
+        /**
          * @brief 単位行列に設定
          * 
          */
@@ -82,6 +93,30 @@ class Matrix
         }
 
         /**
+         * @brief 対角行列を設定
+         * 
+         */
+        void setDiagonal(DataType* data)
+        {
+            int r = rows();
+            int c = cols();
+
+            if(r != c)
+            {
+                throw std::logic_error("diagonal only square matrix");
+            }
+
+            // ゼロに初期化
+            setZeros();
+
+            // 対角行列の値を設定
+            for(int i=0; i<r; i++)
+            {
+                _data[i*c+i] = data[i];
+            }
+        }
+
+        /**
          * @brief テキスト表示用
          * 
          */
@@ -110,6 +145,16 @@ class Matrix
          * @brief 要素読み込みアクセス
          * 
          */
+        const DataType* operator[](int i) const
+        {
+            return &_data[_cols * i];
+        }
+
+        /**
+         * @brief 要素書き込みアクセス
+         * 
+         * @return DataType* 
+         */
         DataType* operator[](int i)
         {
             return &_data[_cols * i];
@@ -128,7 +173,7 @@ class Matrix
          * @brief 代入
          * 
          */
-        Matrix<DataType, Rows, Cols>& operator=(Matrix<DataType, Rows, Cols> m)
+        Matrix<DataType, Rows, Cols>& operator=(const Matrix<DataType, Rows, Cols>& m)
         {
             memcpy(_data, m._data, _data_size);
             return *this;
@@ -138,7 +183,7 @@ class Matrix
          * @brief 加算
          * 
          */
-        Matrix<DataType, Rows, Cols> operator+(Matrix<DataType, Rows, Cols> m)
+        const Matrix<DataType, Rows, Cols> operator+(const Matrix<DataType, Rows, Cols>& m) const
         {
             Matrix<DataType, Rows, Cols> tmp;
 
@@ -154,11 +199,29 @@ class Matrix
         }
 
         /**
+         * @brief 減算
+         * 
+         */
+        const Matrix<DataType, Rows, Cols> operator-(const Matrix<DataType, Rows, Cols>& m) const
+        {
+            Matrix<DataType, Rows, Cols> tmp;
+
+            for(int i=0; i<Rows; i++)
+            {
+                for(int j=0; j<Cols; j++)
+                {
+                    tmp[i][j] = _data[i*Cols+j] - m[i][j];
+                }                
+            }
+
+            return tmp;
+        }
+        /**
          * @brief 行列積
          * 
          */
         template<int T>
-        Matrix<DataType, Rows, T> operator*(Matrix<DataType, Cols, T> m)
+        const Matrix<DataType, Rows, T> operator*(const Matrix<DataType, Cols, T>& m) const
         {
             Matrix<DataType, Rows, T> tmp;
             DataType val = 0;
@@ -183,7 +246,7 @@ class Matrix
          * @brief スカラー積
          * 
          */
-        Matrix<DataType, Rows, Cols> operator*(float v)
+        const Matrix<DataType, Rows, Cols> operator*(float v) const
         {
             Matrix<DataType, Rows, Cols> tmp;
 
@@ -203,7 +266,7 @@ class Matrix
          * @brief 転置行列
          * 
          */
-        Matrix<DataType, Cols, Rows> T()
+        const Matrix<DataType, Cols, Rows> T()
         {
             Matrix<DataType, Cols, Rows> tmp;
 
@@ -222,7 +285,7 @@ class Matrix
          * @brief 余因子
          * 
          */
-        Matrix<DataType, Rows-1, Cols-1> cofactor(int tr, int tc)
+        const Matrix<DataType, Rows-1, Cols-1> cofactor(int tr, int tc)
         {
             int r = rows();
             int c = cols();
@@ -259,7 +322,7 @@ class Matrix
          * 
          * @return Matrix<float, Rows, Cols> 
          */
-        Matrix<float, Rows, Cols> invert()
+        const Matrix<float, Rows, Cols> invert()
         {
             DataType det = determinant();            
 
@@ -366,7 +429,7 @@ class Matrix
          * 
          * @return Matrix<DataType, Rows, Cols> 
          */
-        Matrix<DataType, Rows, Cols> invertBase()
+        const Matrix<DataType, Rows, Cols> invertBase()
         {
             int r = rows();
             int c = cols();
