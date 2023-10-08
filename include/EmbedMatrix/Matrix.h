@@ -6,6 +6,8 @@
 #include <cmath>
 #include <cfloat>
 #include <typeinfo>
+#include <cstring>
+
 
 namespace Embed {
 

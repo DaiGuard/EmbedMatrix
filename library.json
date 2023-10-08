@@ -9,6 +9,10 @@
         "uri": "https://github.com/DaiGuard",
         "maintainer": true
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DaiGuard/EmbedMatrix.git"
+    },
     "licence": "MIT",
     "frameworks": ["Arduino"],
     "platforms": ["espressif32"],
