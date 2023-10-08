@@ -3,7 +3,9 @@
 
 
 #include <stdexcept>
-
+#include <cmath>
+#include <cfloat>
+#include <typeinfo>
 
 namespace Embed {
 
@@ -134,7 +136,7 @@ class Matrix
          * @brief 加算
          * 
          */
-        const Matrix<DataType, Rows, Cols> operator+(Matrix<DataType, Rows, Cols> m)
+        Matrix<DataType, Rows, Cols> operator+(Matrix<DataType, Rows, Cols> m)
         {
             Matrix<DataType, Rows, Cols> tmp;
 
@@ -154,7 +156,7 @@ class Matrix
          * 
          */
         template<int T>
-        const Matrix<DataType, Rows, T> operator*(Matrix<DataType, Cols, T> m)
+        Matrix<DataType, Rows, T> operator*(Matrix<DataType, Cols, T> m)
         {
             Matrix<DataType, Rows, T> tmp;
             DataType val = 0;
@@ -176,10 +178,30 @@ class Matrix
         }
 
         /**
+         * @brief スカラー積
+         * 
+         */
+        Matrix<DataType, Rows, Cols> operator*(float v)
+        {
+            Matrix<DataType, Rows, Cols> tmp;
+
+            for(int i=0; i<Rows; i++)
+            {
+                for(int j=0; j<Cols; j++)
+                {
+                    tmp[i][j] = _data[i*Cols+j] * v;
+                }
+            }
+
+            return tmp;
+        }
+        
+
+        /**
          * @brief 転置行列
          * 
          */
-        const Matrix<DataType, Cols, Rows> T()
+        Matrix<DataType, Cols, Rows> T()
         {
             Matrix<DataType, Cols, Rows> tmp;
 
@@ -195,20 +217,80 @@ class Matrix
         }
 
         /**
-         * @brief 行列式
+         * @brief 余因子
          * 
          */
-        DataType determinant(int r=-1, int c=-1, DataType* data = NULL)
+        Matrix<DataType, Rows-1, Cols-1> cofactor(int tr, int tc)
         {
-            if(data == nullptr) data = _data;
-            if(r < 0) r = rows();
-            if(c < 0) c = cols();
+            int r = rows();
+            int c = cols();
+            DataType* data = _data;
+            DataType tmp_buf[(r-1)*(c-1)];
+
+            cofactor(r, c, data, tr, tc, tmp_buf);
+
+            Matrix<DataType, Rows-1, Cols-1> tmp(tmp_buf);
+
+            return tmp;
+        }
+
+        /**
+         * @brief 行列式
+         *          
+         */
+        DataType determinant()
+        {
+            DataType* data = _data;
+            int r = rows();
+            int c = cols();
 
             if( r != c )
             {
                 throw std::logic_error("determinant only square matrix");
             }
 
+            return determinant(r, c, data);
+        }
+
+        /**
+         * @brief 逆行列(型確認)
+         * 
+         * @return Matrix<float, Rows, Cols> 
+         */
+        Matrix<float, Rows, Cols> invert()
+        {
+            DataType det = determinant();            
+
+            if(fabs(det) < FLT_EPSILON)
+            {
+                throw std::logic_error("determinant 0 value");
+            }
+
+            return invertBase();
+        }
+
+        size_t rows(){ return _rows; }
+        size_t cols(){ return _cols; }
+
+    private:
+        const size_t    _data_num;
+        const size_t    _rows;
+        const size_t    _cols;
+
+        const size_t    _data_step_size;
+        const size_t    _data_size;
+
+        DataType* _data;
+
+
+        char _print_text_buf[512];
+
+        /**
+         * @brief 行列式
+         * 
+         */
+        DataType determinant(int r, int c, DataType* data)
+        {
             if( r == 1 ){
                 return data[0];
             }
@@ -237,22 +319,6 @@ class Matrix
 
             return val;
         }
-
-        size_t rows(){ return _rows; }
-        size_t cols(){ return _cols; }
-
-    private:
-        const size_t    _data_num;
-        const size_t    _rows;
-        const size_t    _cols;
-
-        const size_t    _data_step_size;
-        const size_t    _data_size;
-
-        DataType* _data;
-
-
-        char _print_text_buf[512];
 
         /**
          * @brief 余因子展開
@@ -291,6 +357,46 @@ class Matrix
                     }
                 }
             }
+        }
+
+        /**
+         * @brief 逆行列
+         * 
+         * @return Matrix<DataType, Rows, Cols> 
+         */
+        Matrix<DataType, Rows, Cols> invertBase()
+        {
+            int r = rows();
+            int c = cols();
+            DataType det = determinant();
+            Matrix<DataType, Rows, Cols> ans;
+            Matrix<DataType, Rows-1, Cols-1> tmp;
+            DataType det_a;
+
+            if( r != c )
+            {
+                throw std::logic_error("invert only square matrix");
+            }
+
+            for(int i=0; i<r; i++)
+            {
+                for(int j=0; j<c; j++)
+                {
+                    tmp = cofactor(i, j);
+                    det_a = tmp.determinant();
+
+                    if((i+j)%2==0)
+                    {
+                        ans[j][i] = det_a / det;
+                    }
+                    else
+                    {
+                        ans[j][i] = - det_a / det;
+                    }
+                }
+            }
+
+            return ans;
         }
 };
 
